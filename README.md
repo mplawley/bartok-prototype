@@ -2,7 +2,7 @@
 
 This is a card game called Bartok that uses a simple AI to provide the player opponents. Here is an example image of gameplay:
 
-![alt tag](https://github.com/mplawley/prospector-solitaire/blob/master/Example.jpg)
+![alt tag](https://github.com/mplawley/bartok-prototype/blob/master/Example.jpg)
 
 
 # installation and play
