@@ -1,4 +1,4 @@
-# prospector-solitaire
+# bartok
 
 This is a card game called Bartok that uses a simple AI to provide the player opponents. Here is an example image of gameplay:
 
