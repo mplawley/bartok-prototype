@@ -32,7 +32,7 @@ public class Player
 		//Add the card to the hand
 		hand.Add(eCB);
 
-		//Sort the cards b rank using LINQ if this is a human
+		//Sort the cards by rank using LINQ if this is a human
 		if (type == PlayerType.human)
 		{
 			CardBartok[] cards = hand.ToArray(); //Copy hand to a new array
@@ -48,6 +48,9 @@ public class Player
 			//Note: LINQ operations can be a bit slow (like it could take a couple of milliseconds), but since
 			//we're only doing it once every turn, it isn't a problem
 		}
+
+		eCB.SetSortingLayerName("10"); //This sorts the moving card to the top
+		eCB.eventualSortLayer = handSlotDef.layerName;
 
 		FanHand();
 		return eCB;
@@ -94,6 +97,12 @@ public class Player
 			//This staggers the cards in the z-direction, which isn't visible but which keeps the  cards' colliders from overlapping
 			pos.z = -0.5f * i;
 
+			//The line below makes sure that the card starts moving immediately if it's not the intiail deal at the beginning of the game.
+			if(Bartok.S.phase != TurnPhase.idle)
+			{
+				hand[i].timeStart = 0;
+			}
+
 			//Set the localPosition and rotation of the ith card in the hand
 			hand[i].MoveTo(pos, rotQ); //Tell CardBartok to interpolate
 			hand[i].state = CBState.toHand; //After the move, CardBartok will set the state to CBState.hand
@@ -109,7 +118,57 @@ public class Player
 			hand[i].faceUp = (type == PlayerType.human);
 
 			//Set the SortOrder of the cards so that they overlap properly
-			hand[i].SetSortOrder(i * 4);
+			hand[i].eventualSortOrder = i * 4;
+			//hand[i].SetSortOrder(i * 4);
 		}
+	}
+
+	//The TakeTurn() function enables the AI of the computer Players
+	public void TakeTurn()
+	{
+		Utils.tr(Utils.RoundToPlaces(Time.time), "Player.TakeTurn");
+
+		//Don't need to do anything if this is the human player
+		if(type == PlayerType.human)
+		{
+			return;
+		}
+
+		Bartok.S.phase = TurnPhase.waiting;
+
+		CardBartok cb;
+
+		//If this is an AI player, need to make a choice about what to play. Find valid plays
+		List<CardBartok> validCards = new List<CardBartok>();
+		foreach (CardBartok tCB in hand)
+		{
+			if(Bartok.S.ValidPlay(tCB))
+			{
+				validCards.Add(tCB);
+			}
+		}
+
+		//If there are no wild cards
+		if(validCards.Count == 0)
+		{
+			//...then draw a card
+			cb = AddCard(Bartok.S.Draw());
+			cb.callbackPlayer = this;
+			return;
+		}
+
+		//Otherwise, if tehre is a card or more to play, pick one
+		cb = validCards[Random.Range(0, validCards.Count)];
+		RemoveCard(cb);
+		Bartok.S.MoveToTarget(cb);
+		cb.callbackPlayer = this;
+	}
+
+	public void CBCallback(CardBartok tCB)
+	{
+		Utils.tr(Utils.RoundToPlaces(Time.time), "Player.CBCallback()", tCB.name, "Player " + playerNum);
+
+		//The card is done moving, so pass the turn
+		Bartok.S.PassTurn();
 	}
 }
